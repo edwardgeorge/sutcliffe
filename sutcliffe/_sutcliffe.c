@@ -55,19 +55,17 @@ S_get_toc(PyObject *self, PyObject *args)
     if(read_toc(fd, _get_toc_callback, (void*)tracks) == -1)
     {
         PyErr_SetFromErrnoWithFilename(PyExc_IOError, device_nodename);
-        Py_XDECREF(tracks);
-        tracks = NULL;
-        goto end;
+        goto error;
     }
-    if(PyErr_Occurred() != NULL)
-    {
-        Py_XDECREF(tracks);
-        tracks = NULL;
-        goto end;
-    }
+    // catch exceptions from callbacks
+    if(PyErr_Occurred() != NULL) goto error;
     end:
     close(fd);
     return tracks;
+    error:
+    Py_XDECREF(tracks);
+    tracks = NULL;
+    goto end;
 }
 
 static PyMethodDef SMethods[] = {
