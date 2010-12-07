@@ -6,7 +6,9 @@
 static void
 _get_devices_callback(char *nodename, io_object_t io, void *user_data)
 {
-    PyList_Append((PyObject*)user_data, PyString_FromString(nodename));
+    PyObject *s = PyString_FromString(nodename);
+    PyList_Append((PyObject*)user_data, s);
+    Py_XDECREF(s);
 }
 
 static PyObject *
@@ -29,13 +31,18 @@ static void
 _get_toc_callback(trackinfo *track, void *user_data)
 {
     PyObject *trackdict = PyDict_New();
-    PyDict_SetItemString(trackdict, "session",
-        PyInt_FromLong((long)track->session));
-    PyDict_SetItemString(trackdict, "number",
-        PyInt_FromLong((long)track->number));
-    PyDict_SetItemString(trackdict, "first_sector",
-        PyInt_FromLong((long)track->first_sector));
+    PyObject *i;
+    i = PyInt_FromLong((long)track->session);
+    PyDict_SetItemString(trackdict, "session", i);
+    Py_XDECREF(i);
+    i = PyInt_FromLong((long)track->number);
+    PyDict_SetItemString(trackdict, "number", i);
+    Py_XDECREF(i);
+    i = PyInt_FromLong((long)track->first_sector);
+    PyDict_SetItemString(trackdict, "first_sector", i);
+    Py_XDECREF(i);
     PyList_Append((PyObject*)user_data, trackdict);
+    Py_DECREF(trackdict);
 }
 
 static PyObject *
