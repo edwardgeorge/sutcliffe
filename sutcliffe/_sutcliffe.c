@@ -131,6 +131,19 @@ static PyGetSetDef Track_getset[] = {
     {NULL}
 };
 
+static PyObject *
+Track_repr(TrackObject *self)
+{
+    return PyString_FromFormat("<%s: %d (session:%d) %d:%d:%d [%d]>",
+        self->ob_type->tp_name,
+        self->point,
+        self->session,
+        self->p.minute,
+        self->p.second,
+        self->p.frame,
+        CDConvertMSFToLBA(self->p));
+}
+
 static PyTypeObject TrackType = {
     PyObject_HEAD_INIT(NULL)
     .ob_size = 0,
@@ -140,6 +153,7 @@ static PyTypeObject TrackType = {
     .tp_flags = Py_TPFLAGS_DEFAULT,
     .tp_dealloc = (destructor)Track_dealloc,
     .tp_getset = Track_getset,
+    .tp_repr = (reprfunc)Track_repr,
 };
 
 static PyObject *
