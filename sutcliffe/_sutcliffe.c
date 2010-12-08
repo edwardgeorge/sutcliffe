@@ -215,7 +215,14 @@ static void
 _get_toc_callback(CDTOCDescriptor *track, void *user_data)
 {
     PyObject *tobj = new_track(track);
-    PyList_Append((PyObject*)user_data, tobj);
+    if(PyList_Check((PyObject*)user_data))
+    {
+        PyList_Append((PyObject*)user_data, tobj);
+    }
+    else
+    {
+        PyObject_CallMethod((PyObject*)user_data, "append", "O", tobj);
+    }
     Py_XDECREF(tobj);
 }
 
@@ -246,6 +253,7 @@ S_get_toc(PyObject *self, PyObject *args)
     if(PyErr_Occurred() != NULL) goto error;
     end:
     close(fd);
+    if (!newlist){ Py_INCREF(tracks); }
     return tracks;
     error:
     if (newlist){ Py_XDECREF(tracks); }
