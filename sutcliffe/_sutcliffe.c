@@ -223,16 +223,20 @@ static PyObject *
 S_get_toc(PyObject *self, PyObject *args)
 {
     int fd;
+    int newlist = 0;
     char *device_nodename;
-    PyObject *tracks = NULL;
-    PyArg_ParseTuple(args, "s", &device_nodename);
+    PyObject *tracks = Py_None;
+    PyArg_ParseTuple(args, "s|O", &device_nodename, &tracks);
     fd = opendev(device_nodename, O_RDONLY | O_NONBLOCK, 0, &device_nodename);
     if(fd == -1)
     {
         PyErr_SetFromErrnoWithFilename(PyExc_IOError, device_nodename);
         goto end;
     }
-    tracks = PyList_New(0);
+    if (tracks == Py_None) {
+        tracks = PyList_New(0);
+        newlist = 1;
+    }
     if(read_toc(fd, _get_toc_callback, (void*)tracks) == -1)
     {
         PyErr_SetFromErrnoWithFilename(PyExc_IOError, device_nodename);
@@ -244,7 +248,7 @@ S_get_toc(PyObject *self, PyObject *args)
     close(fd);
     return tracks;
     error:
-    Py_XDECREF(tracks);
+    if (newlist){ Py_XDECREF(tracks); }
     tracks = NULL;
     goto end;
 }
