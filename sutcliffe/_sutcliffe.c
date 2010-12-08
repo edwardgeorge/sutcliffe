@@ -63,6 +63,107 @@ static PyTypeObject MSFType = {
     .tp_new = (newfunc)MSF_new,
 };
 
+static PyObject *
+new_msf(CDMSF msf)
+{
+    PyObject *args = Py_BuildValue("III",
+        msf.minute, msf.second, msf.frame);
+    PyObject *MSFobj = PyObject_CallObject((PyObject*)&MSFType, args);
+    Py_XDECREF(args);
+    return MSFobj;
+}
+
+typedef struct {
+    PyObject_HEAD
+    unsigned int point;
+    unsigned int session;
+    unsigned int tno;
+    unsigned int adr;
+    unsigned int control;
+    CDMSF p;
+    CDMSF address;
+} TrackObject;
+
+static void
+Track_dealloc(TrackObject *self)
+{
+    /*Py_XDECREF(self->p);*/
+    /*Py_XDECREF(self->address);*/
+    self->ob_type->tp_free((PyObject *)self);
+}
+
+static PyObject *
+Track_get_point(TrackObject *self, void *closure)
+{
+    return Py_BuildValue("I", self->point);
+}
+
+static PyObject *
+Track_get_session(TrackObject *self, void *closure)
+{
+    return Py_BuildValue("I", self->session);
+}
+
+static PyObject *
+Track_get_control(TrackObject *self, void *closure)
+{
+    return Py_BuildValue("I", self->control);
+}
+
+static PyObject *
+Track_get_p(TrackObject *self, void *closure)
+{
+    return new_msf(self->p);
+}
+
+static PyObject *
+Track_get_address(TrackObject *self, void *closure)
+{
+    return new_msf(self->address);
+}
+
+static PyGetSetDef Track_getset[] = {
+    {"session", (getter)Track_get_session, NULL, "session", NULL},
+    {"point", (getter)Track_get_point, NULL, "point", NULL},
+    {"control", (getter)Track_get_control, NULL, "control", NULL},
+    {"p", (getter)Track_get_p, NULL, "p", NULL},
+    {"address", (getter)Track_get_address, NULL, "address", NULL},
+    {NULL}
+};
+
+static PyTypeObject TrackType = {
+    PyObject_HEAD_INIT(NULL)
+    .ob_size = 0,
+    .tp_name = "sutcliffe.Track",
+    .tp_basicsize = sizeof(TrackObject),
+    .tp_new = NULL,  // prevent creation from python
+    .tp_flags = Py_TPFLAGS_DEFAULT,
+    .tp_dealloc = (destructor)Track_dealloc,
+    .tp_getset = Track_getset,
+};
+
+static PyObject *
+new_track(CDTOCDescriptor *descr)
+{
+    /*PyObject *tmp;*/
+    TrackObject *self = (TrackObject*)PyType_GenericNew(&TrackType, NULL, NULL);
+    if (!self) return NULL;
+    self->point = descr->point;
+    self->session = descr->session;
+    self->tno = descr->tno;
+    self->adr = descr->adr;
+    self->control = descr->control;
+    /*tmp = new_msf(descr->p);f*/
+    /*if(!tmp) return NULL;*/
+    /*self->p = tmp;*/
+    /*tmp = new_msf(descr->p);f*/
+    /*if(!tmp) return NULL;*/
+    /*self->address = tmp;*/
+    self->p = descr->p;
+    self->control = descr->control;
+    return self;
+}
+
 // TYPES END
 
 static void
@@ -150,10 +251,13 @@ init_sutcliffe(void)
 
     MSFType.tp_base = &PyTuple_Type;
     if (PyType_Ready(&MSFType) < 0) return;
+    if (PyType_Ready(&TrackType) < 0) return;
 
     m = Py_InitModule("_sutcliffe", SMethods);
     if(m == NULL) return;
 
     Py_INCREF(&MSFType);
     PyModule_AddObject(m, "MSF", (PyObject *)&MSFType);
+    Py_INCREF(&TrackType);
+    PyModule_AddObject(m, "Track", (PyObject *)&TrackType);
 }
