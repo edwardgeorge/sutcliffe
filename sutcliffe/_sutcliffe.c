@@ -3,6 +3,68 @@
 #include <util.h>
 #include "osx.c"
 
+// TYPES BEGIN
+
+typedef struct {
+    PyTypeObject tuple;
+    CDMSF msf;
+    unsigned int sector;
+} MSFObject;
+
+static PyObject *
+MSF_new(PyTypeObject *self, PyObject *args, PyObject *kwds)
+{
+    unsigned int minute, second, frame;
+    PyObject *tuple;
+    MSFObject *result;
+    static char *kwlist[] = {"minute", "second", "frame", NULL};
+    if(!PyArg_ParseTupleAndKeywords(args, kwds, "III", kwlist,
+        &minute, &second, &frame)) return NULL;
+    if(!(tuple = Py_BuildValue("((III))", minute, second, frame)))
+        return NULL;
+    if(!(result = (MSFObject*)PyTuple_Type.tp_new(self, tuple, NULL)))
+        return NULL;
+    result->msf.minute = minute;
+    result->msf.second = second;
+    result->msf.frame = frame;
+    result->sector = CDConvertMSFToLBA(result->msf);
+    return (PyObject*)result;
+}
+
+static PyObject *
+MSF_getmsf(MSFObject *self, void *closure)
+{
+    PyObject *item = PyTuple_GetItem((PyObject*)self, (int)closure);
+    Py_XINCREF(item);
+    return item;
+}
+
+static PyObject *
+MSF_getsector(MSFObject *self, void *closure)
+{
+    return Py_BuildValue("I", self->sector);
+}
+
+static PyGetSetDef MSF_getset[] = {
+    {"minute", (getter)MSF_getmsf, NULL, "minute", (void*)0},
+    {"second", (getter)MSF_getmsf, NULL, "second", (void*)1},
+    {"frame", (getter)MSF_getmsf, NULL, "frame", (void*)2},
+    {"sector", (getter)MSF_getsector, NULL, "sector", NULL},
+    {NULL}
+};
+
+static PyTypeObject MSFType = {
+    PyObject_HEAD_INIT(NULL)
+    .ob_size = 0,
+    .tp_name = "sutcliffe.MSF",
+    .tp_basicsize = sizeof(MSFObject),
+    .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,
+    .tp_getset = MSF_getset,
+    .tp_new = (newfunc)MSF_new,
+};
+
+// TYPES END
+
 static void
 _get_devices_callback(char *nodename, io_object_t io, void *user_data)
 {
@@ -85,6 +147,13 @@ PyMODINIT_FUNC
 init_sutcliffe(void)
 {
     PyObject *m;
+
+    MSFType.tp_base = &PyTuple_Type;
+    if (PyType_Ready(&MSFType) < 0) return;
+
     m = Py_InitModule("_sutcliffe", SMethods);
     if(m == NULL) return;
+
+    Py_INCREF(&MSFType);
+    PyModule_AddObject(m, "MSF", (PyObject *)&MSFType);
 }
