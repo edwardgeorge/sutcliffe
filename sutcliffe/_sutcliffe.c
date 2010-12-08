@@ -15,15 +15,22 @@ static PyObject *
 MSF_new(PyTypeObject *self, PyObject *args, PyObject *kwds)
 {
     unsigned int minute, second, frame;
-    PyObject *tuple;
+    PyObject *tuple, *newargs;
     MSFObject *result;
     static char *kwlist[] = {"minute", "second", "frame", NULL};
     if(!PyArg_ParseTupleAndKeywords(args, kwds, "III", kwlist,
         &minute, &second, &frame)) return NULL;
-    if(!(tuple = Py_BuildValue("((III))", minute, second, frame)))
+    if(!(tuple = Py_BuildValue("III", minute, second, frame)))
         return NULL;
-    if(!(result = (MSFObject*)PyTuple_Type.tp_new(self, tuple, NULL)))
+    if(!(newargs = Py_BuildValue("(O)", tuple)))
+    {
+        Py_DECREF(tuple);
         return NULL;
+    }
+    result = (MSFObject*)PyTuple_Type.tp_new(self, newargs, NULL);
+    Py_DECREF(tuple);
+    Py_DECREF(newargs);
+    if(!result) return NULL;
     result->msf.minute = minute;
     result->msf.second = second;
     result->msf.frame = frame;
