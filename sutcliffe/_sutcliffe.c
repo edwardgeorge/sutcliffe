@@ -191,21 +191,11 @@ S_get_devices(PyObject *self, PyObject *args)
 }
 
 static void
-_get_toc_callback(trackinfo *track, void *user_data)
+_get_toc_callback(CDTOCDescriptor *track, void *user_data)
 {
-    PyObject *trackdict = PyDict_New();
-    PyObject *i;
-    i = PyInt_FromLong((long)track->session);
-    PyDict_SetItemString(trackdict, "session", i);
-    Py_XDECREF(i);
-    i = PyInt_FromLong((long)track->number);
-    PyDict_SetItemString(trackdict, "number", i);
-    Py_XDECREF(i);
-    i = PyInt_FromLong((long)track->first_sector);
-    PyDict_SetItemString(trackdict, "first_sector", i);
-    Py_XDECREF(i);
-    PyList_Append((PyObject*)user_data, trackdict);
-    Py_DECREF(trackdict);
+    PyObject *tobj = new_track(track);
+    PyList_Append((PyObject*)user_data, tobj);
+    Py_XDECREF(tobj);
 }
 
 static PyObject *

@@ -6,14 +6,8 @@
 #include <IOKit/storage/IOCDMediaBSDClient.h>
 #include <IOKit/storage/IOMedia.h>
 
-typedef struct trackinfo {
-    unsigned int session;
-    unsigned int number;
-    unsigned int first_sector;
-} trackinfo;
-
 typedef void (*ripcallback)(void *buffer, unsigned int sectors, void *user_data);
-typedef void (*toccallback)(trackinfo *trackinfo, void *user_data);
+typedef void (*toccallback)(CDTOCDescriptor *trackdecr, void *user_data);
 
 static char *
 drive_nodename(io_object_t drive)
@@ -120,17 +114,6 @@ ripsectors(int fd,
     return result;
 }
 
-static trackinfo
-read_toc_descriptor(CDTOCDescriptor *descr)
-{
-    trackinfo ti = {
-        .session = descr->session,
-        .number = descr->point,
-        .first_sector = CDConvertMSFToLBA(descr->p),
-    };
-    return ti;
-}
-
 static int
 read_toc(int fd, toccallback callback, void *user_data)
 {
@@ -140,7 +123,6 @@ read_toc(int fd, toccallback callback, void *user_data)
     unsigned int i;
     unsigned int descr_count;
     unsigned int num_tracks = 0;
-    trackinfo track;
 
     bzero(&cd_read_toc, sizeof(cd_read_toc));
     bzero(buffer, sizeof(buffer));
@@ -155,8 +137,7 @@ read_toc(int fd, toccallback callback, void *user_data)
     descr_count = CDTOCGetDescriptorCount(toc);
     for(i = 0; i < descr_count; i ++)
     {
-        track = read_toc_descriptor(&toc->descriptors[i]);
-        if (callback) callback(&track, user_data);
+        if (callback) callback(&toc->descriptors[i], user_data);
     }
 
     return num_tracks;
