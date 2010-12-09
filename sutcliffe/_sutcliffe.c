@@ -172,6 +172,8 @@ static PyGetSetDef Track_getset[] = {
     {"copy_permitted", (getter)Track_control_bit, NULL, "copy permitted", 2},
     {"data_track", (getter)Track_control_bit, NULL, "data track", 4},
     {"four_channels", (getter)Track_control_bit, NULL, "four channels", 8},
+    /* aliases */
+    {"num", (getter)Track_get_point, NULL, "point", NULL},
     {NULL}
 };
 
