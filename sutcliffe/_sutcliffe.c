@@ -153,6 +153,12 @@ Track_get_address(TrackObject *self, void *closure)
     return new_msf(self->address);
 }
 
+static PyObject *
+Track_control_bit(TrackObject *self, void *closure)
+{
+    return self->control & (int)closure ? Py_True : Py_False;
+}
+
 static PyGetSetDef Track_getset[] = {
     {"session", (getter)Track_get_session, NULL, "session", NULL},
     {"point", (getter)Track_get_point, NULL, "point", NULL},
@@ -161,6 +167,11 @@ static PyGetSetDef Track_getset[] = {
     {"adr", (getter)Track_get_adr, NULL, "adr", NULL},
     {"p", (getter)Track_get_p, NULL, "p", NULL},
     {"address", (getter)Track_get_address, NULL, "address", NULL},
+    /* control byte inspection */
+    {"pre_emphasis", (getter)Track_control_bit, NULL, "pre emphasis", 1},
+    {"copy_permitted", (getter)Track_control_bit, NULL, "copy permitted", 2},
+    {"data_track", (getter)Track_control_bit, NULL, "data track", 4},
+    {"four_channels", (getter)Track_control_bit, NULL, "four channels", 8},
     {NULL}
 };
 
