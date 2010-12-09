@@ -60,6 +60,17 @@ static PyGetSetDef MSF_getset[] = {
     {NULL}
 };
 
+static PyObject *
+MSF_repr(MSFObject *self)
+{
+    return PyString_FromFormat("<%s: %d:%d:%d [%d]>",
+        self->tuple.ob_type->tp_name,
+        self->msf.minute,
+        self->msf.second,
+        self->msf.frame,
+        CDConvertMSFToLBA(self->msf));
+}
+
 static PyTypeObject MSFType = {
     PyObject_HEAD_INIT(NULL)
     .ob_size = 0,
@@ -68,6 +79,7 @@ static PyTypeObject MSFType = {
     .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,
     .tp_getset = MSF_getset,
     .tp_new = (newfunc)MSF_new,
+    .tp_repr = (reprfunc)MSF_repr,
 };
 
 static PyObject *
@@ -118,6 +130,18 @@ Track_get_control(TrackObject *self, void *closure)
 }
 
 static PyObject *
+Track_get_tno(TrackObject *self, void *closure)
+{
+    return Py_BuildValue("I", self->tno);
+}
+
+static PyObject *
+Track_get_adr(TrackObject *self, void *closure)
+{
+    return Py_BuildValue("I", self->adr);
+}
+
+static PyObject *
 Track_get_p(TrackObject *self, void *closure)
 {
     return new_msf(self->p);
@@ -133,6 +157,8 @@ static PyGetSetDef Track_getset[] = {
     {"session", (getter)Track_get_session, NULL, "session", NULL},
     {"point", (getter)Track_get_point, NULL, "point", NULL},
     {"control", (getter)Track_get_control, NULL, "control", NULL},
+    {"tno", (getter)Track_get_tno, NULL, "tno", NULL},
+    {"adr", (getter)Track_get_adr, NULL, "adr", NULL},
     {"p", (getter)Track_get_p, NULL, "p", NULL},
     {"address", (getter)Track_get_address, NULL, "address", NULL},
     {NULL}
@@ -181,6 +207,7 @@ new_track(CDTOCDescriptor *descr)
     /*if(!tmp) return NULL;*/
     /*self->address = tmp;*/
     self->p = descr->p;
+    self->address = descr->address;
     self->control = descr->control;
     return self;
 }
