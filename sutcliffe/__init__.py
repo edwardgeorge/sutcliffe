@@ -42,6 +42,12 @@ class TOC(object):
     def __iter__(self):
         return iter(self.sessions)
 
+    @property
+    def cdda_sessions(self):
+        for i in self:
+            if i.cdda:
+                yield i
+
     def append(self, track):
         session = track.session
         i = session - len(self.sessions)

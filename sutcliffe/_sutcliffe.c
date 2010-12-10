@@ -156,7 +156,14 @@ Track_get_address(TrackObject *self, void *closure)
 static PyObject *
 Track_control_bit(TrackObject *self, void *closure)
 {
-    return self->control & (int)closure ? Py_True : Py_False;
+    int b = (int)closure;
+    return (self->control & b) == b ? Py_True : Py_False;
+}
+
+static PyObject *
+Track_num_channels(TrackObject *self, void *closure)
+{
+    return PyInt_FromLong(self->control & 8 ? 4 : 2);
 }
 
 static PyGetSetDef Track_getset[] = {
@@ -168,12 +175,15 @@ static PyGetSetDef Track_getset[] = {
     {"p", (getter)Track_get_p, NULL, "p", NULL},
     {"address", (getter)Track_get_address, NULL, "address", NULL},
     /* control byte inspection */
-    {"pre_emphasis", (getter)Track_control_bit, NULL, "pre emphasis", 1},
-    {"copy_permitted", (getter)Track_control_bit, NULL, "copy permitted", 2},
-    {"data_track", (getter)Track_control_bit, NULL, "data track", 4},
-    {"four_channels", (getter)Track_control_bit, NULL, "four channels", 8},
+    {"pre_emphasis", (getter)Track_control_bit, NULL, "pre emphasis", (void*)1},
+    {"incremental", (getter)Track_control_bit, NULL, "incremental", (void*)5},
+    {"copy_permitted", (getter)Track_control_bit, NULL, "copy permitted", (void*)2},
+    {"data_track", (getter)Track_control_bit, NULL, "data track", (void*)4},
+    /*{"four_channels", (getter)Track_control_bit, NULL, "four channels", (void*)8},*/
+    {"channels", (getter)Track_num_channels, NULL, "channels", NULL},
     /* aliases */
     {"num", (getter)Track_get_point, NULL, "point", NULL},
+    /* extra */
     {NULL}
 };
 
