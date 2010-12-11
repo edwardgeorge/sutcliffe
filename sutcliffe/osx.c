@@ -6,7 +6,7 @@
 #include <IOKit/storage/IOCDMediaBSDClient.h>
 #include <IOKit/storage/IOMedia.h>
 
-typedef void (*ripcallback)(void *buffer, unsigned int sectors, void *user_data);
+typedef int (*ripcallback)(void *buffer, unsigned int sectors, void *user_data);
 typedef void (*toccallback)(CDTOCDescriptor *trackdecr, void *user_data);
 
 static char *
@@ -92,9 +92,18 @@ ripsectors(int fd,
     unsigned int sectors_read = 0;
 
     buffer = calloc(buffer_len, kCDSectorSizeCDDA);
-    if(buffer == NULL) return -1;
+    if(buffer == NULL){
+        PyErr_SetString(PyExc_RuntimeError,
+            "Couldn't allocate memory for buffer");
+        return -1;
+    }
 
-    if(ioctl(fd, DKIOCCDSETSPEED, kCDSpeedMax) == -1) return -1;
+    if(ioctl(fd, DKIOCCDSETSPEED, kCDSpeedMax) == -1){
+        PyErr_SetString(PyExc_RuntimeError,
+            "Couldn't set speed of cd");
+        free(buffer);
+        return -1;
+    }
 
     while(sectors_ripped < num_sectors)
     {
@@ -102,13 +111,19 @@ ripsectors(int fd,
             buffer,
             sector_start + sectors_ripped,
             sectors_left > buffer_len ? buffer_len : sectors_left);
-        if (sectors_ripped == -1){
+        if (sectors_read == -1){
+            PyErr_SetString(PyExc_RuntimeError,
+                "Error occured when reading from CD.");
             result = -1;
             break;
         }
         sectors_ripped += sectors_read;
         sectors_left -= sectors_read;
-        callback(buffer, sectors_read, user_data);
+        if(callback(buffer, sectors_read, user_data))
+        {
+            result = -1;
+            break;
+        }
     }
     free(buffer);
     return result;

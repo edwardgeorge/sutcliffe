@@ -316,7 +316,7 @@ typedef struct {
     PyObject *state;
 } ripinfo;
 
-static void
+static int
 _ripsector_callback(void *buffer, unsigned int sectors, void *user_data)
 {
     PyObject *callback = (PyObject*)((ripinfo*)user_data)->callback;
@@ -325,14 +325,15 @@ _ripsector_callback(void *buffer, unsigned int sectors, void *user_data)
         (sectors * kCDSectorSizeCDDA) / sizeof(char));
     if(data == NULL)
     {
-        PyErr_Clear();
-        return;
+        return -1;
     }
     if(PyObject_CallFunctionObjArgs(callback, state, data) == NULL)
     {
-        PyErr_Clear();
+        Py_DECREF(data);
+        return -1;
     }
     Py_DECREF(data);
+    return 0;
 }
 
 static PyObject *
@@ -349,7 +350,11 @@ S_rip_sectors(PyObject *self, PyObject *args)
         PyErr_SetFromErrnoWithFilename(PyExc_IOError, device_nodename);
         return NULL;
     }
-    ripsectors(fd, start, end, _ripsector_callback, (void*)&state);
+    if(ripsectors(fd, start, end, _ripsector_callback, (void*)&state) == -1)
+    {
+        close(fd);
+        return NULL;
+    }
     close(fd);
     Py_RETURN_NONE;
 }
