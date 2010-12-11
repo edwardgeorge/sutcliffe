@@ -282,7 +282,7 @@ S_get_toc(PyObject *self, PyObject *args)
     int fd;
     int newlist = 0;
     char *device_nodename;
-    PyObject *tracks = Py_None;
+    PyObject *tracks = NULL;
     if(!PyArg_ParseTuple(args, "s|O", &device_nodename, &tracks)) return NULL;
     fd = opendev(device_nodename, O_RDONLY | O_NONBLOCK, 0, &device_nodename);
     if(fd == -1)
@@ -290,7 +290,7 @@ S_get_toc(PyObject *self, PyObject *args)
         PyErr_SetFromErrnoWithFilename(PyExc_IOError, device_nodename);
         goto end;
     }
-    if (tracks == Py_None) {
+    if (tracks == NULL) {
         tracks = PyList_New(0);
         newlist = 1;
     }
