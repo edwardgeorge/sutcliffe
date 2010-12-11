@@ -321,18 +321,8 @@ _ripsector_callback(void *buffer, unsigned int sectors, void *user_data)
 {
     PyObject *callback = (PyObject*)((ripinfo*)user_data)->callback;
     PyObject *state = (PyObject*)((ripinfo*)user_data)->state;
-    PyObject *data = PyString_FromStringAndSize((char*)buffer,
-        (sectors * kCDSectorSizeCDDA) / sizeof(char));
-    if(data == NULL)
-    {
-        return -1;
-    }
-    if(PyObject_CallFunctionObjArgs(callback, state, data) == NULL)
-    {
-        Py_DECREF(data);
-        return -1;
-    }
-    Py_DECREF(data);
+    if(PyObject_CallFunction(callback, "Ois#", state, sectors, buffer,
+        (sectors * kCDSectorSizeCDDA) / sizeof(char)) == NULL) return -1;
     return 0;
 }
 
