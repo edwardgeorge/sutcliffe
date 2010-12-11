@@ -283,7 +283,7 @@ S_get_toc(PyObject *self, PyObject *args)
     int newlist = 0;
     char *device_nodename;
     PyObject *tracks = Py_None;
-    PyArg_ParseTuple(args, "s|O", &device_nodename, &tracks);
+    if(!PyArg_ParseTuple(args, "s|O", &device_nodename, &tracks)) return NULL;
     fd = opendev(device_nodename, O_RDONLY | O_NONBLOCK, 0, &device_nodename);
     if(fd == -1)
     {
@@ -311,9 +311,33 @@ S_get_toc(PyObject *self, PyObject *args)
     goto end;
 }
 
+static void
+_ripsector_callback(void *buffer, unsigned int sectors, void *user_data)
+{
+}
+
+static PyObject *
+S_rip_sectors(PyObject *self, PyObject *args)
+{
+    int start, end, fd;
+    char *device_nodename;
+    PyObject *callback, *user_data;
+    if(!PyArg_ParseTuple(args, "siiOO", &device_nodename, &start, &end, &callback)) return NULL;
+    fd = opendev(device_nodename, O_RDONLY | O_NONBLOCK, 0, &device_nodename);
+    if(fd == -1)
+    {
+        PyErr_SetFromErrnoWithFilename(PyExc_IOError, device_nodename);
+        return NULL;
+    }
+    ripsectors(fd, start, end, _ripsector_callback, NULL);
+    close(fd);
+    Py_RETURN_NONE;
+}
+
 static PyMethodDef SMethods[] = {
     {"get_devices", S_get_devices, METH_NOARGS},
     {"get_toc", S_get_toc, METH_VARARGS},
+    {"rip_sectors", S_rip_sectors, METH_VARARGS},
     {NULL, NULL, 0, NULL} /* sentinel */
 };
 

@@ -31,6 +31,32 @@ class Session(object):
         elif track.num == 162 and track.adr == 1:
             self.lead_out = track.p
 
+    def get_track(self, num):
+        for i in self.tracks:
+            if i.num == num:
+                return i
+        raise IndexError()
+
+    def __getitem__(self, item):
+        if isinstance(item, slice):
+            b, e = item.start, item.stop
+            if b is None:
+                b = self.first_track
+            if e is None:
+                e = self.last_track
+        elif isinstance(item, int):
+            b, e = item, item
+        else:
+            raise TypeError()
+
+        start_sector = self.get_track(b).p.sector
+        if e + 1 > self.last_track:
+            end_sector = self.lead_out.sector - 1
+        else:
+            end_sector = self.get_track(e + 1).p.sector - 1
+
+        return start_sector, end_sector
+
 
 class TOC(object):
     def __init__(self):
