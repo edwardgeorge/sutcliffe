@@ -311,9 +311,20 @@ S_get_toc(PyObject *self, PyObject *args)
     goto end;
 }
 
+typedef struct {
+    PyObject *callback;
+    PyObject *state;
+} ripinfo;
+
 static void
 _ripsector_callback(void *buffer, unsigned int sectors, void *user_data)
 {
+    PyObject *callback = (PyObject*)((ripinfo*)user_data)->callback;
+    PyObject *state = (PyObject*)((ripinfo*)user_data)->state;
+    if(PyObject_CallFunctionObjArgs(callback, state, NULL) == NULL)
+    {
+        PyErr_Clear();
+    }
 }
 
 static PyObject *
@@ -321,15 +332,17 @@ S_rip_sectors(PyObject *self, PyObject *args)
 {
     int start, end, fd;
     char *device_nodename;
-    PyObject *callback, *user_data;
-    if(!PyArg_ParseTuple(args, "siiOO", &device_nodename, &start, &end, &callback)) return NULL;
+    ripinfo state;
+    /*PyObject *callback, *user_data;*/
+    if(!PyArg_ParseTuple(args, "siiOO", &device_nodename, &start, &end,
+        &state.callback, &state.state)) return NULL;
     fd = opendev(device_nodename, O_RDONLY | O_NONBLOCK, 0, &device_nodename);
     if(fd == -1)
     {
         PyErr_SetFromErrnoWithFilename(PyExc_IOError, device_nodename);
         return NULL;
     }
-    ripsectors(fd, start, end, _ripsector_callback, NULL);
+    ripsectors(fd, start, end, _ripsector_callback, (void*)&state);
     close(fd);
     Py_RETURN_NONE;
 }
