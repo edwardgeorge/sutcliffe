@@ -321,10 +321,18 @@ _ripsector_callback(void *buffer, unsigned int sectors, void *user_data)
 {
     PyObject *callback = (PyObject*)((ripinfo*)user_data)->callback;
     PyObject *state = (PyObject*)((ripinfo*)user_data)->state;
-    if(PyObject_CallFunctionObjArgs(callback, state, NULL) == NULL)
+    PyObject *data = PyString_FromStringAndSize((char*)buffer,
+        (sectors * kCDSectorSizeCDDA) / sizeof(char));
+    if(data == NULL)
+    {
+        PyErr_Clear();
+        return;
+    }
+    if(PyObject_CallFunctionObjArgs(callback, state, data) == NULL)
     {
         PyErr_Clear();
     }
+    Py_DECREF(data);
 }
 
 static PyObject *
