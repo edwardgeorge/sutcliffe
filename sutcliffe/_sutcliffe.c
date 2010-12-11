@@ -341,7 +341,6 @@ S_rip_sectors(PyObject *self, PyObject *args)
     int start, end, fd;
     char *device_nodename;
     ripinfo state;
-    /*PyObject *callback, *user_data;*/
     if(!PyArg_ParseTuple(args, "siiOO", &device_nodename, &start, &end,
         &state.callback, &state.state)) return NULL;
     fd = opendev(device_nodename, O_RDONLY | O_NONBLOCK, 0, &device_nodename);
