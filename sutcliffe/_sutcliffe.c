@@ -157,7 +157,7 @@ static PyObject *
 Track_control_bit(TrackObject *self, void *closure)
 {
     int b = (int)closure;
-    return (self->control & b) == b ? Py_True : Py_False;
+    return PyBool_FromLong((self->control & b) == b);
 }
 
 static PyObject *
