@@ -114,5 +114,7 @@ class TOC(object):
                 h.update("%08X" % 0)
             else:
                 h.update("%08X" % (t.p.sector + 150))
-        return base64.b64encode(h.digest()).replace('+', '.').replace('/',
-            '_').replace('=', '-')
+        return (base64.b64encode(h.digest())
+                    .replace('+', '.')
+                    .replace('/', '_')
+                    .replace('=', '-'))
