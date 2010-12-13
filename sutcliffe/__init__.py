@@ -86,7 +86,22 @@ class TOC(object):
         self.sessions[session - 1].append(track)
 
     @property
-    def musicbrainz_disc_id(self):
+    def cddb_discid(self):
+        s = list(self.cdda_sessions)[0]
+        #csum = lambda i: ((i % 10) + csum(i // 10)) if i > 0 else 0
+        csum = lambda a, b: csum(a + (b % 10), b // 10) if b > 0 else a
+        #nums = lambda msf: (msf.minute * 60) + msf.second
+        nums = lambda msf: (msf.sector + 150) // 75
+        calc = lambda i: nums(i.p)
+        checksum = reduce(csum, map(calc, s), 0)
+        length = (((s.lead_out.sector + 150) / 75) -
+            ((s.get_track(s.first_track).p.sector + 150) / 75))
+        res = ((checksum % 0xff) << 24 | length << 8 | s.last_track)
+        res = "%08x" % (res, )
+        return res
+
+    @property
+    def musicbrainz_discid(self):
         s = list(self.cdda_sessions)[0]
         h = hashlib.sha1()
         h.update("%02X" % s.first_track)
