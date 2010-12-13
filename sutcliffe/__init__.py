@@ -109,7 +109,7 @@ class TOC(object):
         h.update("%08X" % (s.lead_out.sector + 150))
         for i in range(99):
             try:
-                t = s.get_track(i+1)
+                t = s.get_track(i + 1)
             except IndexError, e:
                 h.update("%08X" % 0)
             else:
