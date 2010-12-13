@@ -1,3 +1,6 @@
+import base64
+import hashlib
+
 from _sutcliffe import *
 
 
@@ -81,3 +84,20 @@ class TOC(object):
             self.sessions.extend([None] * i)
             self.sessions[session - 1] = Session(session)
         self.sessions[session - 1].append(track)
+
+    @property
+    def musicbrainz_disc_id(self):
+        s = list(self.cdda_sessions)[0]
+        h = hashlib.sha1()
+        h.update("%02X" % s.first_track)
+        h.update("%02X" % s.last_track)
+        h.update("%08X" % (s.lead_out.sector + 150))
+        for i in range(99):
+            try:
+                t = s.get_track(i+1)
+            except IndexError, e:
+                h.update("%08X" % 0)
+            else:
+                h.update("%08X" % (t.p.sector + 150))
+        return base64.b64encode(h.digest()).replace('+', '.').replace('/',
+            '_').replace('=', '-')
